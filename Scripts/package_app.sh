@@ -3,11 +3,30 @@ set -euo pipefail
 
 root="$(cd "$(dirname "$0")/.." && pwd -P)"
 cd "$root"
-configuration="$(printf '%s' "${1:-release}" | tr '[:upper:]' '[:lower:]')"
+usage() {
+  printf 'Usage: %s [debug|release] [--universal] [--output-dir DIRECTORY]\n' "$0" >&2
+  exit 2
+}
+
+configuration=release
+if [[ "$#" -gt 0 && "$1" != --* ]]; then
+  configuration="$(printf '%s' "$1" | tr '[:upper:]' '[:lower:]')"
+  shift
+fi
 case "$configuration" in
   debug|release) ;;
-  *) printf 'Usage: %s [debug|release]\n' "$0" >&2; exit 2 ;;
+  *) usage ;;
 esac
+universal=false
+destination="$root"
+while [[ "$#" -gt 0 ]]; do
+  case "$1" in
+    --universal) universal=true; shift ;;
+    --output-dir) [[ "$#" -ge 2 ]] || usage; destination="$(cd "$2" && pwd -P)"; shift 2 ;;
+    *) usage ;;
+  esac
+done
+application="$destination/InspireBar.app"
 source "$root/version.env"
 
 # Preserve CodexBar's SDK stamp so AppKit opts into the system's current menu bar and window behavior.
@@ -15,16 +34,29 @@ sdk="$(xcrun --sdk macosx --show-sdk-path)"
 sdk_version="$(xcrun --sdk macosx --show-sdk-version)"
 build_args=(--sdk "$sdk"
   -Xlinker -platform_version -Xlinker macos -Xlinker 14.0 -Xlinker "$sdk_version")
-swift build --configuration "$configuration" "${build_args[@]}" --product InspireBar
-products="$(swift build --configuration "$configuration" "${build_args[@]}" --show-bin-path)"
+build_products() {
+  swift build --configuration "$configuration" "${build_args[@]}" "$@" --product InspireBar >&2 || return
+  swift build --configuration "$configuration" "${build_args[@]}" "$@" --show-bin-path
+}
+
+mkdir -p "$root/.build"
 stage="$(mktemp -d "$root/.build/package.XXXXXX")"
-trap 'if [[ ! -d "$root/InspireBar.app" && -d "$stage/previous.app" ]]; then
-        mv "$stage/previous.app" "$root/InspireBar.app"
+trap 'if [[ ! -d "$application" && -d "$stage/previous.app" ]]; then
+        mv "$stage/previous.app" "$application"
       fi
       rm -rf -- "$stage"' EXIT
 bundle="$stage/InspireBar.app"
 mkdir -p "$bundle/Contents/MacOS" "$bundle/Contents/Resources"
-install -m 755 "$products/InspireBar" "$bundle/Contents/MacOS/InspireBar"
+executable="$bundle/Contents/MacOS/InspireBar"
+if "$universal"; then
+  products="$(build_products --triple arm64-apple-macosx14.0 --scratch-path "$root/.build/universal/arm64")"
+  intel="$(build_products --triple x86_64-apple-macosx14.0 --scratch-path "$root/.build/universal/x86_64")"
+  lipo -create "$products/InspireBar" "$intel/InspireBar" -output "$executable"
+  chmod 755 "$executable"
+else
+  products="$(build_products)"
+  install -m 755 "$products/InspireBar" "$executable"
+fi
 ditto "$products/InspireBar_InspireBar.bundle" "$bundle/Contents/Resources/InspireBar_InspireBar.bundle"
 install -m 644 "$root/Icon.icns" "$bundle/Contents/Resources/Icon.icns"
 install -m 644 "$root/LICENSE" "$bundle/Contents/Resources/LICENSE"
@@ -60,8 +92,8 @@ PLIST
 plutil -lint "$bundle/Contents/Info.plist"
 codesign --force --sign - "$bundle"
 codesign --verify --strict "$bundle"
-if [[ -d "$root/InspireBar.app" ]]; then
-  mv "$root/InspireBar.app" "$stage/previous.app"
+if [[ -d "$application" ]]; then
+  mv "$application" "$stage/previous.app"
 fi
-mv "$bundle" "$root/InspireBar.app"
-printf '%s\n' "$root/InspireBar.app"
+mv "$bundle" "$application"
+printf '%s\n' "$application"
