@@ -1,35 +1,18 @@
 SHELL := /bin/bash
 
-# Keep FILTER literal, including Make expressions, shell syntax, and apostrophes.
 unexport FILTER
 test_filter_arg = $(if $(value FILTER),--filter '$(subst ','"'"',$(value FILTER))')
 
-.PHONY: build check docs-list format lint release restart start start-debug start-release stop test test-fast test-skip-build test-live test-tty
+.PHONY: build check format lint restart start start-debug start-release stop test test-fast
 
-start:
-	./Scripts/compile_and_run.sh
-
-start-debug:
+start start-debug restart:
 	./Scripts/compile_and_run.sh
 
 start-release:
-	./Scripts/package_app.sh release
-	pkill -x CodexBar || pkill -f CodexBar.app || true
-	cd /Users/steipete/Projects/codexbar && open -n /Users/steipete/Projects/codexbar/CodexBar.app
-
-restart: start
+	./Scripts/compile_and_run.sh --release
 
 stop:
-	pkill -x CodexBar || pkill -f CodexBar.app || true
-
-check lint:
-	./Scripts/lint.sh $(if $(filter Linux,$(shell uname -s)),lint-linux,lint)
-
-format:
-	./Scripts/lint.sh format
-
-docs-list:
-	node Scripts/docs-list.mjs
+	./Scripts/compile_and_run.sh --stop
 
 build:
 	swift build
@@ -40,14 +23,8 @@ test:
 test-fast:
 	./Scripts/test_fast.sh $(test_filter_arg)
 
-test-skip-build:
-	./Scripts/test_fast.sh --skip-build $(test_filter_arg)
+check lint:
+	./Scripts/lint.sh lint
 
-test-tty:
-	source ./Scripts/test_environment.sh && CODEXBAR_SUPPRESS_TEST_KEYCHAIN_ACCESS=1 swift test --filter TTYIntegrationTests
-
-test-live:
-	export CODEXBAR_ALLOW_TEST_KEYCHAIN_ACCESS=1 && source ./Scripts/test_environment.sh && LIVE_TEST=1 swift test --filter LiveAccountTests
-
-release:
-	./Scripts/package_app.sh release
+format:
+	./Scripts/lint.sh format
