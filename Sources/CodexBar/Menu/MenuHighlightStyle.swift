@@ -1,45 +1,19 @@
+import InspireBarCore
 import SwiftUI
 
-extension EnvironmentValues {
-    @Entry var menuItemHighlighted: Bool = false
-    /// Optional live-refresh monitor injected into menu card views so the provider card
-    /// subtitle can reflect the in-flight "Refreshing…" state in place while the NSMenu
-    /// stays open, without rebuilding the menu during AppKit tracking.
-    @Entry var menuCardRefreshMonitor: MenuCardRefreshMonitor?
-}
-
 enum MenuHighlightStyle {
-    static let selectionText = Color(nsColor: .selectedMenuItemTextColor)
-    static let normalPrimaryText = Color(nsColor: .controlTextColor)
-    static let normalSecondaryText = Color(nsColor: .secondaryLabelColor)
+    static let progressTrack = Color(nsColor: .tertiaryLabelColor).opacity(0.22)
+    static let progressTint = Color(red: 73 / 255, green: 163 / 255, blue: 176 / 255)
+    static let card = Color.secondary.opacity(0.08)
 
-    static func primary(_ highlighted: Bool) -> Color {
-        highlighted ? self.selectionText : self.normalPrimaryText
-    }
-
-    static func secondary(_ highlighted: Bool) -> Color {
-        highlighted ? self.selectionText : self.normalSecondaryText
-    }
-
-    static func error(_ highlighted: Bool) -> Color {
-        highlighted ? self.selectionText : Color(nsColor: .systemRed)
-    }
-
-    /// Emphasis for a card's status label (for example the active account).
-    /// A highlighted row still uses the selection color so contrast is kept.
-    static func accent(_ highlighted: Bool) -> Color {
-        highlighted ? self.selectionText : Color(nsColor: .controlAccentColor)
-    }
-
-    static func progressTrack(_ highlighted: Bool) -> Color {
-        highlighted ? self.selectionText.opacity(0.22) : Color(nsColor: .tertiaryLabelColor).opacity(0.22)
-    }
-
-    static func progressTint(_ highlighted: Bool, fallback: Color) -> Color {
-        highlighted ? self.selectionText : fallback
-    }
-
-    static func selectionBackground(_ highlighted: Bool) -> Color {
-        highlighted ? Color(nsColor: .selectedContentBackgroundColor) : .clear
+    static func utilizationTint(_ band: InspireInstance.Utilization.Band, scheme: ColorScheme) -> Color {
+        switch (band, scheme) {
+        case (.low, .dark): Color(red: 0.33, green: 0.80, blue: 0.50)
+        case (.elevated, .dark): Color(red: 0.98, green: 0.78, blue: 0.32)
+        case (.high, .dark): Color(red: 1, green: 0.39, blue: 0.42)
+        case (.low, _): Color(red: 0.10, green: 0.60, blue: 0.30)
+        case (.elevated, _): Color(red: 0.79, green: 0.56, blue: 0.07)
+        case (.high, _): Color(red: 1, green: 0.27, blue: 0.29)
+        }
     }
 }

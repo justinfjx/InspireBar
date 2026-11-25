@@ -12,6 +12,6 @@ enum ChartAxisLabelLayout {
             .font(.caption2)
             // Charts can propose a narrow width at plot edges even when the menu has room for the full date.
             .fixedSize(horizontal: true, vertical: false)
-            .foregroundStyle(Color(nsColor: .tertiaryLabelColor))
+            .foregroundStyle(.secondary)
     }
 }

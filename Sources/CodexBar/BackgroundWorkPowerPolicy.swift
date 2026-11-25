@@ -5,7 +5,8 @@ enum BackgroundWorkPowerPolicy {
 
     static func automaticInterval(
         _ requested: TimeInterval?,
-        lowPowerModeEnabled: Bool) -> TimeInterval?
+        lowPowerModeEnabled: Bool)
+        -> TimeInterval?
     {
         guard let requested else { return nil }
         guard lowPowerModeEnabled else { return requested }
