@@ -10,12 +10,11 @@ xcuserdata/
 DerivedData
 
 # Bundles / artifacts
-# Main app bundle (any variation)
+InspireBar.app/
 CodexBar.app/
 CodexBar *.app/
 CodexBar_*.app/
 Codexbar.app/
-# Release artifacts
 *.ipa
 *.dSYM*
 *.xcarchive/
@@ -29,7 +28,7 @@ Codexbar.app/
 Icon.iconset
 debug_*.swift
 
-# Misc
+# User files
 .DS_Store
 .vscode/
 .codex/environments/
@@ -42,6 +41,10 @@ docs/*-analysis.md
 docs/.viewport-audit/
 docs/.astro/
 
-# Swift Package Manager metadata (leave sources tracked)
-# Packages/
-# Package.resolved
+# Local Inspire session and collector state
+.inspire/
+web_session.json
+cas_session.json
+snapshot.json
+archive.json
+collector.lock
